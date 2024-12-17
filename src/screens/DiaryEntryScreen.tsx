@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   View,
   TextInput,
@@ -7,28 +7,29 @@ import {
   StyleSheet,
   ActivityIndicator,
   ScrollView,
+  Alert,
 } from 'react-native';
-import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useNavigation } from '@react-navigation/native';
+import DiaryService, { DiaryEntry } from '../services/DiaryService';
 
 const DiaryEntryScreen: React.FC = () => {
   const [entry, setEntry] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const [previousEntries, setPreviousEntries] = useState<string[]>([]);
+  const [previousEntries, setPreviousEntries] = useState<DiaryEntry[]>([]);
   const navigation = useNavigation();
+  const diaryService = DiaryService.getInstance();
 
-  React.useEffect(() => {
+  useEffect(() => {
     loadPreviousEntries();
   }, []);
 
   const loadPreviousEntries = async () => {
     try {
-      const entries = await AsyncStorage.getItem('previousEntries');
-      if (entries) {
-        setPreviousEntries(JSON.parse(entries));
-      }
+      const entries = await diaryService.getPreviousEntries(5);
+      setPreviousEntries(entries);
     } catch (error) {
       console.error('Error loading previous entries:', error);
+      Alert.alert('Error', 'Failed to load previous entries');
     }
   };
 
@@ -37,17 +38,13 @@ const DiaryEntryScreen: React.FC = () => {
 
     setIsSubmitting(true);
     try {
-      // Store the entry locally for memory feature
-      const updatedEntries = [entry, ...previousEntries].slice(0, 5);
-      await AsyncStorage.setItem('previousEntries', JSON.stringify(updatedEntries));
-      setPreviousEntries(updatedEntries);
-
-      // Clear the input
+      const newEntry = await diaryService.createDiaryEntry(entry);
+      setPreviousEntries([newEntry, ...previousEntries].slice(0, 5));
       setEntry('');
-
-      // TODO: Send to backend for processing in step 008
+      Alert.alert('Success', 'Diary entry created successfully');
     } catch (error) {
       console.error('Error saving entry:', error);
+      Alert.alert('Error', 'Failed to create diary entry');
     } finally {
       setIsSubmitting(false);
     }
@@ -91,7 +88,10 @@ const DiaryEntryScreen: React.FC = () => {
             <Text style={styles.sectionTitle}>Previous Entries</Text>
             {previousEntries.map((prevEntry, index) => (
               <View key={index} style={styles.previousEntry}>
-                <Text numberOfLines={2}>{prevEntry}</Text>
+                <Text style={styles.entryContent}>{prevEntry.enhancedContent || prevEntry.content}</Text>
+                <Text style={styles.timestamp}>
+                  {new Date(prevEntry.timestamp).toLocaleDateString()}
+                </Text>
               </View>
             ))}
           </View>
@@ -145,10 +145,19 @@ const styles = StyleSheet.create({
     marginBottom: 10,
   },
   previousEntry: {
-    padding: 10,
+    padding: 15,
     backgroundColor: '#f5f5f5',
     borderRadius: 8,
     marginBottom: 10,
+  },
+  entryContent: {
+    fontSize: 14,
+    marginBottom: 5,
+    color: '#333',
+  },
+  timestamp: {
+    fontSize: 12,
+    color: '#666',
   },
 });
 
