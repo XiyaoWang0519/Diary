@@ -9,6 +9,9 @@ RUN pip install poetry && \
 # Copy all files at once
 COPY . .
 
+# Debug: List contents to verify files are copied
+RUN ls -la && ls -la diary_backend
+
 # Install dependencies and package
 RUN poetry install --no-dev --no-interaction --no-ansi
 
