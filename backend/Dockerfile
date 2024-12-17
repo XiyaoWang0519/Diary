@@ -2,14 +2,13 @@ FROM python:3.12-slim as builder
 
 WORKDIR /app
 
-ARG CACHEBUST=1
-
-RUN pip install poetry && \
-    poetry config virtualenvs.in-project true
-
 COPY . .
 
-RUN poetry install --no-dev --no-interaction --no-ansi
+RUN pip install poetry && \
+    poetry config virtualenvs.in-project true && \
+    ls -la && \
+    ls -la diary_backend && \
+    poetry install --no-dev --no-interaction --no-ansi
 
 FROM python:3.12-slim
 
