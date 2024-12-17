@@ -5,9 +5,16 @@ WORKDIR /app
 RUN pip install poetry && \
     poetry config virtualenvs.in-project true
 
-# Copy all files at once to prevent caching issues
-COPY . .
+# Copy only dependency files first to leverage caching
+COPY pyproject.toml poetry.lock ./
 
+# Install dependencies
+RUN poetry install --no-dev --no-interaction --no-ansi
+
+# Now copy the actual package files
+COPY diary_backend diary_backend/
+
+# Install the package itself
 RUN poetry install --no-dev --no-interaction --no-ansi
 
 FROM python:3.12-slim
