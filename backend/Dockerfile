@@ -2,20 +2,14 @@ FROM python:3.12-slim as builder
 
 WORKDIR /app
 
-# Copy poetry files first
-COPY pyproject.toml poetry.lock ./
-
 # Install poetry and configure it
 RUN pip install poetry && \
     poetry config virtualenvs.in-project true
 
-# Install dependencies
-RUN poetry install --no-dev --no-interaction --no-ansi
+# Copy all files at once
+COPY . .
 
-# Copy the actual package files
-COPY diary_backend ./diary_backend
-
-# Install the package itself
+# Install dependencies and package
 RUN poetry install --no-dev --no-interaction --no-ansi
 
 FROM python:3.12-slim
