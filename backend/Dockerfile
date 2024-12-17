@@ -4,14 +4,12 @@ WORKDIR /app
 
 RUN pip install poetry
 
-# Copy only the files needed for installing dependencies first
+# Create the package directory
+RUN mkdir -p diary_backend
+
+# Copy the entire package first
+COPY diary_backend diary_backend/
 COPY pyproject.toml poetry.lock ./
-
-# Create the directory structure
-RUN mkdir -p diary_backend/app
-
-# Copy the application code
-COPY app diary_backend/app/
 
 RUN poetry config virtualenvs.in-project true && \
     poetry install --no-dev --no-interaction --no-ansi
