@@ -2,14 +2,13 @@ FROM python:3.12-slim as builder
 
 WORKDIR /app
 
+ARG CACHEBUST=1
+
 RUN pip install poetry && \
     poetry config virtualenvs.in-project true
 
-# Copy all files at once
-COPY pyproject.toml poetry.lock ./
-COPY diary_backend diary_backend/
+COPY . .
 
-# Install dependencies and package
 RUN poetry install --no-dev --no-interaction --no-ansi
 
 FROM python:3.12-slim
