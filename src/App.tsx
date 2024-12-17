@@ -5,10 +5,12 @@ import {createStackNavigator} from '@react-navigation/stack';
 import type {ReactNode} from 'react';
 import HomeScreen from './screens/HomeScreen';
 import VoiceDiaryScreen from './screens/VoiceDiaryScreen';
+import DiaryEntryScreen from './screens/DiaryEntryScreen';
 
 type RootStackParamList = {
   Home: undefined;
   VoiceDiary: undefined;
+  DiaryEntry: undefined;
 };
 
 const Stack = createStackNavigator<RootStackParamList>();
@@ -25,6 +27,13 @@ const App: React.FC = (): ReactNode => {
               component={HomeScreen}
               options={{
                 title: 'DiaryApp',
+              }}
+            />
+            <Stack.Screen
+              name="DiaryEntry"
+              component={DiaryEntryScreen}
+              options={{
+                title: 'Write Diary',
               }}
             />
             <Stack.Screen
