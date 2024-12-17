@@ -3,6 +3,18 @@ export interface User {
   isPremium: boolean;
 }
 
+export interface DiaryEntry {
+  id?: number;
+  content: string;
+  enhanced_content?: string;
+  created_at: string;
+  context?: {
+    analysis: string;
+    entry_count: number;
+  };
+  user_id: string;
+}
+
 export interface VoiceState {
   isRecording: boolean;
   error: string | null;

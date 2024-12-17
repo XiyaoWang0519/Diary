@@ -10,18 +10,26 @@ import {
   Alert,
 } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
-import DiaryService, { DiaryEntry } from '../services/DiaryService';
+import DiaryService from '../services/DiaryService';
+import { DiaryEntry } from '../types';
 
 const DiaryEntryScreen: React.FC = () => {
-  const [entry, setEntry] = useState('');
-  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [content, setContent] = useState('');
   const [previousEntries, setPreviousEntries] = useState<DiaryEntry[]>([]);
+  const [isLoading, setIsLoading] = useState(false);
+  const [isPremium, setIsPremium] = useState(false);
   const navigation = useNavigation();
   const diaryService = DiaryService.getInstance();
 
   useEffect(() => {
     loadPreviousEntries();
+    checkPremiumStatus();
   }, []);
+
+  const checkPremiumStatus = async () => {
+    const premium = await diaryService.isPremiumUser();
+    setIsPremium(premium);
+  };
 
   const loadPreviousEntries = async () => {
     try {
@@ -34,24 +42,35 @@ const DiaryEntryScreen: React.FC = () => {
   };
 
   const handleSubmit = async () => {
-    if (!entry.trim()) return;
+    if (!content.trim()) return;
 
-    setIsSubmitting(true);
+    setIsLoading(true);
     try {
-      const newEntry = await diaryService.createDiaryEntry(entry);
-      setPreviousEntries([newEntry, ...previousEntries].slice(0, 5));
-      setEntry('');
-      Alert.alert('Success', 'Diary entry created successfully');
+      const newEntry = await diaryService.createDiaryEntry(content);
+      setContent('');
+      await loadPreviousEntries(); // Reload entries to include the new one
     } catch (error) {
-      console.error('Error saving entry:', error);
+      console.error('Error submitting diary entry:', error);
       Alert.alert('Error', 'Failed to create diary entry');
     } finally {
-      setIsSubmitting(false);
+      setIsLoading(false);
     }
   };
 
   const navigateToVoiceDiary = () => {
-    navigation.navigate('VoiceDiary' as never);
+    if (isPremium) {
+      navigation.navigate('VoiceDiary' as never);
+    }
+  };
+
+  const formatDate = (dateString: string) => {
+    return new Date(dateString).toLocaleDateString('en-US', {
+      year: 'numeric',
+      month: 'long',
+      day: 'numeric',
+      hour: '2-digit',
+      minute: '2-digit',
+    });
   };
 
   return (
@@ -61,41 +80,43 @@ const DiaryEntryScreen: React.FC = () => {
           style={styles.input}
           multiline
           placeholder="Write your thoughts..."
-          value={entry}
-          onChangeText={setEntry}
+          value={content}
+          onChangeText={setContent}
         />
         <TouchableOpacity
           style={styles.submitButton}
           onPress={handleSubmit}
-          disabled={isSubmitting}
+          disabled={isLoading}
         >
-          {isSubmitting ? (
+          {isLoading ? (
             <ActivityIndicator color="#fff" />
           ) : (
-            <Text style={styles.buttonText}>Create Diary Entry</Text>
+            <Text style={styles.buttonText}>Save Entry</Text>
           )}
         </TouchableOpacity>
-
-        <TouchableOpacity
-          style={styles.voiceButton}
-          onPress={navigateToVoiceDiary}
-        >
-          <Text style={styles.buttonText}>Try Voice Diary (Premium)</Text>
-        </TouchableOpacity>
-
-        {previousEntries.length > 0 && (
-          <View style={styles.previousEntriesContainer}>
-            <Text style={styles.sectionTitle}>Previous Entries</Text>
-            {previousEntries.map((prevEntry, index) => (
-              <View key={index} style={styles.previousEntry}>
-                <Text style={styles.entryContent}>{prevEntry.enhancedContent || prevEntry.content}</Text>
-                <Text style={styles.timestamp}>
-                  {new Date(prevEntry.timestamp).toLocaleDateString()}
-                </Text>
-              </View>
-            ))}
-          </View>
+        {isPremium && (
+          <TouchableOpacity
+            style={styles.voiceButton}
+            onPress={navigateToVoiceDiary}
+          >
+            <Text style={styles.buttonText}>Voice Entry</Text>
+          </TouchableOpacity>
         )}
+      </View>
+
+      <View style={styles.previousEntriesContainer}>
+        <Text style={styles.sectionTitle}>Previous Entries</Text>
+        {previousEntries.map((entry, index) => (
+          <View key={entry.id || index} style={styles.previousEntry}>
+            <Text style={styles.entryContent}>{entry.enhanced_content || entry.content}</Text>
+            <Text style={styles.timestamp}>{formatDate(entry.created_at)}</Text>
+            {entry.context && (
+              <Text style={styles.contextText}>
+                Entry {entry.context.entry_count} - Memory Context: {entry.context.analysis}
+              </Text>
+            )}
+          </View>
+        ))}
       </View>
     </ScrollView>
   );
@@ -138,6 +159,7 @@ const styles = StyleSheet.create({
   },
   previousEntriesContainer: {
     marginTop: 30,
+    paddingHorizontal: 20,
   },
   sectionTitle: {
     fontSize: 18,
@@ -158,7 +180,12 @@ const styles = StyleSheet.create({
   timestamp: {
     fontSize: 12,
     color: '#666',
+    marginBottom: 5,
+  },
+  contextText: {
+    fontSize: 12,
+    color: '#666',
+    fontStyle: 'italic',
+    marginTop: 5,
   },
 });
-
-export default DiaryEntryScreen;

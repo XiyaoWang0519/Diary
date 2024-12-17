@@ -1,11 +1,5 @@
 import AsyncStorage from '@react-native-async-storage/async-storage';
-
-export interface DiaryEntry {
-  content: string;
-  enhancedContent?: string;
-  timestamp: number;
-  userId: string;
-}
+import { DiaryEntry, User } from '../types';
 
 class DiaryService {
   private static instance: DiaryService;
@@ -47,10 +41,12 @@ class DiaryService {
 
       const data = await response.json();
       return {
+        id: data.id,
         content: data.content,
-        enhancedContent: data.enhanced_content,
-        timestamp: Date.now(),
-        userId,
+        enhanced_content: data.enhanced_content,
+        created_at: data.created_at,
+        context: data.context,
+        user_id: userId,
       };
     } catch (error) {
       console.error('Error creating diary entry:', error);
@@ -79,16 +75,32 @@ class DiaryService {
         throw new Error('Failed to fetch diary entries');
       }
 
-      const data = await response.json();
-      return data.entries.map((entry: any) => ({
+      const entries = await response.json();
+      return entries.map((entry: DiaryEntry) => ({
+        id: entry.id,
         content: entry.content,
-        enhancedContent: entry.enhanced_content,
-        timestamp: new Date(entry.created_at).getTime(),
-        userId,
+        enhanced_content: entry.enhanced_content,
+        created_at: entry.created_at,
+        context: entry.context,
+        user_id: userId,
       }));
     } catch (error) {
       console.error('Error fetching diary entries:', error);
       throw error;
+    }
+  }
+
+  async isPremiumUser(): Promise<boolean> {
+    try {
+      const userJson = await AsyncStorage.getItem('user');
+      if (!userJson) {
+        return false;
+      }
+      const user: User = JSON.parse(userJson);
+      return user.isPremium;
+    } catch (error) {
+      console.error('Error checking premium status:', error);
+      return false;
     }
   }
 }
