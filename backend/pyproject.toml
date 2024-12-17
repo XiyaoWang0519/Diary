@@ -7,7 +7,7 @@ name = "diary_backend"
 version = "0.1.0"
 description = "Backend for the Diary application with AI enhancement features"
 authors = ["Devin <devin@example.com>"]
-packages = [{include = "app"}]
+packages = [{include = "diary_backend"}]
 
 [tool.poetry.dependencies]
 python = ">=3.8"
