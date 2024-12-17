@@ -1,6 +1,6 @@
 [build-system]
-requires = ["hatchling"]
-build-backend = "hatchling.build"
+requires = ["setuptools>=61.0"]
+build-backend = "setuptools.build_meta"
 
 [project]
 name = "diary_backend"
@@ -25,5 +25,5 @@ dev = [
     "isort>=5.0"
 ]
 
-[tool.hatch.build.targets.wheel]
+[tool.setuptools]
 packages = ["app"]
